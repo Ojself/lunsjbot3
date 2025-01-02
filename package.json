@@ -1,0 +1,21 @@
+{
+  "name": "lunsjbot3",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@slack/web-api": "^7.7.0",
+    "@slack/webhook": "^7.0.3",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "openai": "^4.75.0",
+    "puppeteer": "^23.10.2"
+  }
+}
