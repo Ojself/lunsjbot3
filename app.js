@@ -120,19 +120,28 @@ const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
 
 async function main() {
   const websiteUrl = 'https://tullin.munu.shop/meny'; 
+  try {
 
-  const html = await fetchWebsite(websiteUrl);
-  const menuText = extractMenuForDay(html);
+    const html = await fetchWebsite(websiteUrl);
+    const menuText = extractMenuForDay(html);
+    
+    //const menuText = await extractMenuWithAI(extractedHtml); 
+    
+    const imageUrl = await generateMenuImage(menuText); 
   
-  //const menuText = await extractMenuWithAI(extractedHtml); 
-  
-  const imageUrl = await generateMenuImage(menuText); 
+    await sendToSlack(menuText, imageUrl); 
+    console.log("I'm done, bye!");    
+    process.exit(0); 
+  }
+  catch (error) {
+    console.error('Error: ', error);
+    process.exit(1)
+  }
 
-  await sendToSlack(menuText, imageUrl); 
 }
 
+main();
 
-
-cron.schedule('0 10 * * 1-5', () => {
+/* cron.schedule('0 10 * * 1-5', () => {
   main();
-});
+}); */
