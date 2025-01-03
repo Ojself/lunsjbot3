@@ -13,10 +13,17 @@ const openai = new OpenAI({
 
   const fetchWebsite = async (url) => {
     const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Required in many server environments
-    });
+    args: [
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--single-process",
+      "--no-zygote",
+    ],
+    executablePath:
+      process.env.NODE_ENV === "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : puppeteer.executablePath(),
+  });
   
     const page = await browser.newPage();
     try {
@@ -120,6 +127,7 @@ const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
 
 
 async function main() {
+  console.log("I'm starting, hold on!");
   const websiteUrl = 'https://tullin.munu.shop/meny'; 
   try {
 
