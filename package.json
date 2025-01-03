@@ -14,8 +14,10 @@
     "@slack/webhook": "^7.0.3",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.7",
+    "install": "^0.13.0",
     "node-cron": "^3.0.3",
+    "npx": "^10.2.2",
     "openai": "^4.75.0",
-    "puppeteer": "^23.10.2"
+    "puppeteer": "^23.11.1"
   }
 }

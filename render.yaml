@@ -1,0 +1,9 @@
+services:
+  - type: cron
+    name: lunsjbot3
+    env: node
+    plan: starter
+    buildCommand: |
+      npm install
+      npx puppeteer install
+    startCommand: node app.js

@@ -10,17 +10,17 @@ const openai = new OpenAI({
   });
 
 
-  async function fetchWebsite(url) {
+
+  const fetchWebsite = async (url) => {
     const browser = await puppeteer.launch({
       headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'], // Required in many server environments
     });
-    const page = await browser.newPage();
   
+    const page = await browser.newPage();
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
-      await page.waitForSelector('#react-app');
-      
-     
       const content = await page.content();
       return content;
     } catch (error) {
@@ -28,7 +28,8 @@ const openai = new OpenAI({
     } finally {
       await browser.close();
     }
-  }
+  };
+  
 
 
 function extractMenu(html) {
