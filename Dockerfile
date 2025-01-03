@@ -1,24 +1,19 @@
-# Use the official Puppeteer image which includes Chromium
-FROM ghcr.io/puppeteer/puppeteer:19.7.2
+FROM node:slim as app
 
-# Set environment variables for Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Set the working directory
-WORKDIR /usr/src/app
+RUN apt-get update && apt-get install gnupg wget -y && \
+  wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+  sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+  apt-get update && \
+  apt-get install google-chrome-stable -y --no-install-recommends && \
+  rm -rf /var/lib/apt/lists/*
 
-# Copy package.json and package-lock.json for dependency installation
-COPY package*.json ./
+WORKDIR /
 
-# Install dependencies
-RUN npm ci
-
-# Copy the rest of the application files
 COPY . .
 
-# Expose the necessary port (if your app requires one)
-EXPOSE 3000
+RUN npm install
 
-# Command to run your app
-CMD ["node", "app.js"]
+CMD ["npm", "start"]

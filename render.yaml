@@ -1,7 +1,0 @@
-services:
-  - type: cron
-    name: lunsjbot3
-    env: docker
-    plan: starter
-    dockerfilePath: ./Dockerfile
-    schedule: "0 9 * * 1-5" # Your cron schedule (Monday to Friday at 9:00 AM UTC)

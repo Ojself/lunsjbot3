@@ -13,21 +13,21 @@ const openai = new OpenAI({
 
   const fetchWebsite = async (url) => {
     const browser = await puppeteer.launch({
-    args: [
-      "--disable-setuid-sandbox",
-      "--no-sandbox",
-      "--single-process",
-      "--no-zygote",
-    ],
-    executablePath:
-      process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-  });
+      args: [
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--single-process",
+        "--no-zygote",
+      ],
+      executablePath:
+        process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
+    });
   
-    const page = await browser.newPage();
     try {
-      await page.goto(url, { waitUntil: 'networkidle2' });
+      const page = await browser.newPage();
+      await page.goto(url);
       const content = await page.content();
       return content;
     } catch (error) {
@@ -130,14 +130,17 @@ async function main() {
   console.log("I'm starting, hold on!");
   const websiteUrl = 'https://tullin.munu.shop/meny'; 
   try {
-
+    console.log("Fetching website...");
     const html = await fetchWebsite(websiteUrl);
+    
+    console.log("Extracting menu...");
     const menuText = extractMenuForDay(html);
     
     //const menuText = await extractMenuWithAI(extractedHtml); 
-    
+    console.log("Generating image...");
     const imageUrl = await generateMenuImage(menuText); 
-  
+    
+    console.log("Sending to Slack...");
     await sendToSlack(menuText, imageUrl); 
     console.log("I'm done, bye!");    
     process.exit(0); 
