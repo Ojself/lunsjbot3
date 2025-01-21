@@ -66,7 +66,10 @@ async function uploadToR2(imageUrl, fileName) {
 }
 
 const fetchWebsite = async (url) => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox"],
+  });
 
   try {
     const page = await browser.newPage();
