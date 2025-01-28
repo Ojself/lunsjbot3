@@ -139,11 +139,11 @@ async function extractMenuWithAI(html) {
   }
 }
 
-async function generateMenuImage(menuText) {
+async function generateMenuImage(prompt, menuText) {
   try {
     const response = await openai.images.generate({
       model: "dall-e-3",
-      prompt: `Create a visually appealing image with no text that represents the following cafeteria menu:\n${menuText}`,
+      prompt: `${prompt}\n${menuText}`,
       n: 1,
       size: "1024x1024",
     });
@@ -160,7 +160,7 @@ async function generateMenuImage(menuText) {
   }
 }
 
-async function sendToSlack(menuText, imageUrl) {
+async function sendToSlack(menuText, imageUrl, prompt) {
   const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
 
   try {
@@ -189,7 +189,7 @@ async function sendToSlack(menuText, imageUrl) {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Vil du bidra? Ta kontakt*",
+            text: `*Prompt*: ${prompt}`,
           },
         },
       ],
@@ -198,6 +198,17 @@ async function sendToSlack(menuText, imageUrl) {
     console.error("Error sending message to Slack:", error);
   }
 }
+
+const imagePrompts = [
+  "Create a visually appealing image with no text that represents the following cafeteria menu:",
+  "Close-up photograph of a delicious meal from the cafeteria menu:",
+  "Illustration of a meal from the cafeteria menu in a cartoon style:",
+  "Surreal image of a meal from the cafeteria menu in a fantasy setting:",
+  "Abstract representation of a meal from the cafeteria menu:",
+  "Artistic interpretation in the style of cyberpunk with the backdrop of a dystopian city of a meal from the cafeteria menu:",
+  "Minimalist image of a meal from the cafeteria menu:",
+  "Create an image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
+];
 
 async function main() {
   console.info("I'm starting, hold on!");
@@ -210,10 +221,12 @@ async function main() {
     const menuTextAi = await extractMenuWithAI(html);
 
     console.info("Generating image from text: ", menuTextAi);
-    const imageUrl = await generateMenuImage(menuTextAi);
+    const randomPrompt =
+      imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
+    const imageUrl = await generateMenuImage(randomPrompt, menuTextAi);
 
     console.info("Sending to Slack...");
-    await sendToSlack(menuTextAi, imageUrl);
+    await sendToSlack(menuTextAi, imageUrl, randomPrompt);
     console.info("I'm done, bye!");
     process.exit(0);
   } catch (error) {
