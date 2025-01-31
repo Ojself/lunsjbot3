@@ -207,7 +207,7 @@ const imagePrompts = [
   'Abstract representation with no text of a meal from the cafeteria menu:',
   'Artistic interpretation with no text in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
   'Minimalist image of the cafeteria menu with no text:',
-  "Create an image with no text in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
+  "Create an visually appealing image with no text in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
 ];
 
 async function main() {
