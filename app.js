@@ -201,9 +201,9 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 
 const imagePrompts = [
   'Create a visually appealing image with no text that represents the following cafeteria menu:',
-  'Close-up photograph, with no text, of a delicious meal from the cafeteria menu:',
-  'Illustration of a meal from the cafeteria menu in a cartoon style with no text:',
-  'Surreal image of a meal from the cafeteria menu in a fantasy setting with no text:',
+  'Close-up photograph, no text, of a delicious and appealing meal from the cafeteria menu:',
+  'Appealing illustration of a meal from the cafeteria menu in a cartoon style with no text:',
+  'Surreal and visually appealing image in a fantasy setting with no text that represents the following cafteria menu:',
   'Abstract representation with no text of a meal from the cafeteria menu:',
   'Artistic interpretation with no text in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
   'Minimalist image of the cafeteria menu with no text:',
