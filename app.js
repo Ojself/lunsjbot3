@@ -205,7 +205,7 @@ const imagePrompts = [
   'Appealing illustration of a meal from the cafeteria menu in a cartoon style with no text:',
   'Surreal and visually appealing image in a fantasy setting with no text that represents the following cafteria menu:',
   'Abstract representation with no text of a meal from the cafeteria menu:',
-  'Artistic interpretation with no text in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
+  'Create an artistic and appealing image with no text in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
   'Minimalist image of the cafeteria menu with no text:',
   "Create an visually appealing image with no text in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
 ];
