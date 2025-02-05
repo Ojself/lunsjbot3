@@ -4,12 +4,7 @@ const cron = require('node-cron');
 const { IncomingWebhook } = require('@slack/webhook');
 const OpenAI = require('openai');
 const puppeteer = require('puppeteer');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -37,28 +32,20 @@ async function uploadToR2(imageUrl, fileName) {
 
     // Generate a unique key for the file
     const uniqueKey = crypto.randomUUID();
+    const objectKey = `${uniqueKey}-${fileName}`;
 
     // Upload to R2
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: `${uniqueKey}-${fileName}`,
+      Key: objectKey,
       Body: buffer,
       ContentType: 'image/png',
     });
-
     await s3.send(command);
 
-    // Generate a signed URL valid for 24 hours
-    const signedUrl = await getSignedUrl(
-      s3,
-      new GetObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: `${uniqueKey}-${fileName}`,
-      }),
-      { expiresIn: 432000 } // URL valid for 5 days
-    );
+    const publicUrl = `https://${process.env.R2_PUBLIC_DOMAIN}/${objectKey}`;
 
-    return signedUrl;
+    return publicUrl;
   } catch (error) {
     console.error('Error uploading to R2:', error);
     throw error;
