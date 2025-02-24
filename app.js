@@ -131,7 +131,7 @@ async function generateMenuImage(prompt, menuText) {
   try {
     const response = await openai.images.generate({
       model: 'dall-e-3',
-      prompt: `${prompt}\n${menuText}`,
+      prompt: `${prompt}\n${menuText}\n The image should not have any text in it.`,
       n: 1,
       size: '1024x1024',
     });
@@ -188,14 +188,14 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 }
 
 const imagePrompts = [
-  'Create a visually appealing image in the style of a known painter of your choosing with no text that represents the following cafeteria menu:',
-  'Close-up photograph, no text, of a delicious and appealing meal from the cafeteria menu:',
-  'Appealing illustration of a meal from the cafeteria menu in a cartoon style with no text:',
-  'Surreal and visually appealing image in a fantasy setting with no text that represents the following cafteria menu:',
-  'Abstract representation with no text of a meal from the cafeteria menu:',
-  'Create an artistic and appealing image with no text in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
-  'Create a visually appealing image in the style of minimalism with no text that represents the cafeteria menu:',
-  "Create an visually appealing image with no text in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
+  'Create a visually appealing image in the style of a known painter of your choosing that represents the following cafeteria menu:',
+  'Close-up photograph of a delicious and appealing meal from the cafeteria menu:',
+  'Appealing illustration of a meal from the cafeteria menu in a cartoon style:',
+  'Surreal and visually appealing image in a fantasy setting that represents the following cafteria menu:',
+  'Abstract representation of a meal from the cafeteria menu:',
+  'Create an artistic and appealing image in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
+  'Create a visually appealing image in the style of minimalism that represents the cafeteria menu:',
+  "Create a visually appealing image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
 ];
 
 async function main() {
@@ -209,8 +209,11 @@ async function main() {
     const menuTextAi = await extractMenuWithAI(html);
 
     console.info('Generating image from text: ', menuTextAi);
+
     const randomPrompt =
       imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
+    console.log(randomPrompt, menuTextAi);
+
     const imageUrl = await generateMenuImage(randomPrompt, menuTextAi);
 
     console.info('Sending to Slack...');
