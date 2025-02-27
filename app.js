@@ -188,15 +188,15 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 }
 
 const imagePrompts = [
+  "Create a visually appealing image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
   "Create a visually appealing image in the style of Edvard Munch's Skrik that represents the following cafeteria menu:",
   "Create a visually appealing image in the color palette of Johannes Vermeer's Girl with a Pearl Earring that represents the following cafeteria menu:",
+  "Create a visually appealing image in the style of Claude Monet's Impression, Sunrise that represents the following cafeteria menu:",
   'Close-up photograph of a delicious and appealing meal from the cafeteria menu:',
   'Appealing illustration of a meal from the cafeteria menu in a cartoon style:',
   'Surreal and visually appealing image in a fantasy setting that represents the following cafteria menu:',
   'Abstract representation of a meal from the cafeteria menu:',
-  'Create an artistic and appealing image in the style of cyberpunk with the backdrop of a dystopian city of the cafeteria menu:',
   'Create a visually appealing image in the style of minimalism that represents the cafeteria menu:',
-  "Create a visually appealing image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
 ];
 
 async function main() {
