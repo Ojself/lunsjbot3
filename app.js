@@ -189,6 +189,8 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 
 const imagePrompts = [
   "Create a visually appealing image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
+  "Create a visually appealing image in the style of Picasso's Guernica that represents the following cafeteria menu:",
+  "Create a visually appealing image in the style of Salvador Dali's The Persistence of Memory that represents the following cafeteria menu:",
   "Create a visually appealing image in the style of Edvard Munch's Skrik that represents the following cafeteria menu:",
   'Close-up photograph of a delicious and appealing meal from the cafeteria menu:',
   'Appealing illustration of a meal from the cafeteria menu in a cartoon style:',
