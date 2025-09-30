@@ -107,7 +107,7 @@ function extractMenuForDay(html) {
 }
 
 // Brukes når HTML er dårlig strukturert
-async function extractMenuWithAI(html) {
+async function extractMenuForDayWithAI(html) {
   const $ = cheerio.load(html);
   const menuElement = $('.static-container').children().text();
 
@@ -127,11 +127,11 @@ async function extractMenuWithAI(html) {
   }
 }
 
-async function generateMenuImage(prompt, menuText) {
+async function generateMenuImage(prompt) {
   try {
     const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: `${prompt}\n${menuText}\n The image should not have any text in it.`,
+      model: 'gpt-image-1',
+      prompt: prompt,
       n: 1,
       size: '1024x1024',
     });
@@ -187,17 +187,95 @@ async function sendToSlack(menuText, imageUrl, prompt) {
   }
 }
 
-const imagePrompts = [
-  "Create a visually appealing image in the style of Van Gogh's Starry Night that represents the following cafeteria menu:",
-  "Create a visually appealing image in the style of Picasso's Guernica that represents the following cafeteria menu:",
-  "Create a visually appealing image in the style of Salvador Dali's The Persistence of Memory that represents the following cafeteria menu:",
-  "Create a visually appealing image in the style of Edvard Munch's Skrik that represents the following cafeteria menu:",
-  'Close-up photograph of a delicious and appealing meal from the cafeteria menu:',
-  'Appealing illustration of a meal from the cafeteria menu in a cartoon style:',
-  'Surreal and visually appealing image in a fantasy setting that represents the following cafteria menu:',
-  'Abstract representation of a meal from the cafeteria menu:',
-  'Create a visually appealing image in the style of minimalism that represents the cafeteria menu:',
-];
+async function extractAndNormalizeMenu(html) {
+  const $ = cheerio.load(html);
+  const raw = $('.static-container').text();
+
+  // Eksempel på JSON Schema for strukturert meny
+  const menuSchema = {
+    name: "MenuForToday",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        language: { type: "string", enum: ["nb-NO"] },
+        day_detected: { type: "string", description: "Mandag–Fredag på norsk" },
+        items: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              title: { type: "string", description: "Kort norsk navn på retten, rettet for stavefeil" },
+              description: { type: "string" },
+              allergens: {
+                type: "array",
+                items: { type: "string" },
+                description: "Standard allergener på norsk, f.eks. melk, gluten (hvete), egg, fisk, nøtter"
+              },
+              vegetarian: { type: "boolean" },
+              vegan: { type: "boolean" },
+              spicy: { type: "boolean" },
+              notes: { type: "string" }
+            },
+            required: ["title"]
+          }
+        },
+        pretty_text_nb: { type: "string", description: "Pen, kort norsk oppsummering for Slack" }
+      },
+      required: ["language", "items", "pretty_text_nb"]
+    }
+  };
+
+  const todayNb = ["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"][new Date().getDay()];
+  const system = `
+  Du er en norsk menyredaktør (bokmål). Du får rotete kantinetekst (svorsk/engelsk/feilstaving).
+  Oppgave:
+  1) Finn dagens seksjon (prioriter "${todayNb}", men bruk skjønn om dato/ukedag mangler).
+  2) «Gjett» intensjonen bak rare ord og oversett til korrekt norsk.
+  3) Normaliser allergener (gluten -> gluten (hvete) hvis relevant).
+  4) Returner struktur etter JSON-skjemaet. Ikke legg til ting som ikke står implisitt i teksten.
+  5) Bruk norsk bokmål i all tekst.`.trim();
+
+  try {
+    const resp = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      response_format: {
+        type: "json_schema",
+        json_schema: menuSchema
+      },
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Rå menytekst:\n${raw}\n\nReturner kun JSON.` }
+      ],
+      max_tokens: 800
+    });
+
+    const json = JSON.parse(resp.choices[0].message.content);
+
+    // Lag enkel «pen tekst» fallback hvis tom
+    const pretty = json.pretty_text_nb && json.pretty_text_nb.trim().length > 0
+      ? json.pretty_text_nb
+      : json.items.map(i => `• ${i.title}${i.allergens?.length ? ` (allergener: ${i.allergens.join(", ")})` : ""}`).join("\n");
+
+    return { prettyText: pretty, data: json };
+  } catch (err) {
+    console.error("AI normalize error", err);
+    return { prettyText: "", data: null };
+  }
+  
+}
+
+
+
+const getRandomPrompt = (menuText) => {
+  const imagePrompts = [
+    `A hyper-realistic, ultra-detailed, close-up photo shot of ${menuText} with a high-end DSLR, showcasing extreme texture and contrast. The subject is illuminated by a harsh, stylized flash, creating dramatic shadows and sharp highlights. The image feels tactile and immersive—every pore, fiber, or surface detail is visible. Shot with a shallow depth of field, background bokeh is creamy and minimal. Composition is unique and intentional—this is not just realism, it’s hyper-real, cinematic still life with a surreal edge.`
+    `Professional food photography, ${menuText}`
+  ]
+  return imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
+};
 
 async function main() {
   console.info("I'm starting, hold on!");
@@ -206,19 +284,23 @@ async function main() {
     const html = await fetchWebsite(websiteUrl);
 
     console.info('Extracting menu...');
-    const menuText = extractMenuForDay(html);
-    const menuTextAi = await extractMenuWithAI(html);
+    
+    //const menuText = extractMenuForDay(html);
+    //const menuTextAi = await extractMenuForDayWithAI(html);
 
-    console.info('Generating image from text: ', menuTextAi);
+    const { prettyText, data } = await extractAndNormalizeMenu(html);
+    console.info(data)
 
-    const randomPrompt =
-      imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
-    console.log(randomPrompt, menuTextAi);
 
-    const imageUrl = await generateMenuImage(randomPrompt, menuTextAi);
+    console.info('Generating image from text: ', prettyText);
+
+    const randomPrompt = getRandomPrompt(prettyText)
+    console.info(randomPrompt);
+
+    const imageUrl = await generateMenuImage(randomPrompt);
 
     console.info('Sending to Slack...');
-    await sendToSlack(menuTextAi, imageUrl, randomPrompt);
+    await sendToSlack(prettyText, imageUrl, randomPrompt);
     console.info("I'm done, bye!");
     process.exit(0);
   } catch (error) {
