@@ -271,7 +271,7 @@ async function extractAndNormalizeMenu(html) {
 
 const getRandomPrompt = (menuText) => {
   const imagePrompts = [
-    `A hyper-realistic, ultra-detailed, close-up photo shot of ${menuText} with a high-end DSLR, showcasing extreme texture and contrast. The subject is illuminated by a harsh, stylized flash, creating dramatic shadows and sharp highlights. The image feels tactile and immersive—every pore, fiber, or surface detail is visible. Shot with a shallow depth of field, background bokeh is creamy and minimal. Composition is unique and intentional—this is not just realism, it’s hyper-real, cinematic still life with a surreal edge.`
+    `A hyper-realistic, ultra-detailed, close-up photo shot of ${menuText} with a high-end DSLR, showcasing extreme texture and contrast. The subject is illuminated by a harsh, stylized flash, creating dramatic shadows and sharp highlights. The image feels tactile and immersive—every pore, fiber, or surface detail is visible. Shot with a shallow depth of field, background bokeh is creamy and minimal. Composition is unique and intentional—this is not just realism, it’s hyper-real, cinematic still life with a surreal edge.`,
     `Professional food photography, ${menuText}`
   ]
   return imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
