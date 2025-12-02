@@ -282,7 +282,17 @@ async function extractAndNormalizeMenu(html) {
 const getRandomPrompt = (menuText) => {
   const imagePrompts = [
     `A hyper-realistic, ultra-detailed, close-up photo shot of ${menuText} with a high-end DSLR, showcasing extreme texture and contrast. The subject is illuminated by a harsh, stylized flash, creating dramatic shadows and sharp highlights. The image feels tactile and immersive—every pore, fiber, or surface detail is visible. Shot with a shallow depth of field, background bokeh is creamy and minimal. Composition is unique and intentional—this is not just realism, it’s hyper-real, cinematic still life with a surreal edge.`,
-    `Professional food photography, ${menuText}`
+    `Cinematic fine-dining photograph of ${menuText}, shot on a full-frame camera with a 50mm f/1.2 lens. Low-key lighting with rich shadows and subtle rim light detailing the edges of the dish. Deep, velvety color grading, inspired by Michelin-star plating photography. Texture-rich macro detail with a moody, intimate dining atmosphere.`,
+    `Bright editorial food photography of ${menuText}, styled for a high-end culinary magazine. Natural sunlight from a window creates soft gradients and gentle shadows. Props are minimalist: linen napkins, matte ceramic dishes, seasonal accents. Shot with a 35mm lens for an airy, lifestyle feel—clean, fresh, and inviting.`,
+    `Dynamic splash-art studio shot of ${menuText}, frozen mid-motion with high-speed flash. Liquids, crumbs, or ingredients suspended dramatically in the air. Hyper-crisp detail, glossy highlights, and commercial-advertising polish. Background is pure gradient studio color for maximum contrast and visual impact.`,
+    `Rustic, farm-to-table style photo of ${menuText} on weathered wood surfaces. Soft warm light like golden-hour sun, earthy tones, and natural textures. Includes organic props like herbs, grain sacks, or vegetables. Shallow depth of field and subtle film grain for an artisanal, wholesome feel.`,
+    `Extreme macro photography of ${menuText}, focusing on abstract textures and micro-details. 5:1 magnification, razor-thin depth of field, and controlled studio lighting. The food becomes sculptural and surreal—emphasizing pattern, moisture, crystallization, and structure like scientific photography with artistic flair.`,
+    `Clean, glossy commercial product photograph of ${menuText} styled for packaging. Perfect symmetry, immaculate styling, and ultra-sharp definition. Background is seamless white or color-matched. Lighting is even, diffused, and controlled. Every element appears intentional, polished, and ready for print.`,
+    `Soft, dreamy pastel-toned food photo of ${menuText}. Backlit with gentle diffusion, creating a glowing halo around the dish. Props include soft linens, pastel ceramics, and airy backgrounds. Atmosphere feels delicate, ethereal, and almost whimsical.`,
+    `Dark-academia inspired gourmet photo of ${menuText} with deep brown, brass, and parchment tones. Lit like an old oil painting with directional Rembrandt-style lighting. Heavy shadows, rich textures, and dramatic vignetting create a moody, scholarly atmosphere.`,
+    `Authentic street-food documentary-style photo of ${menuText}, shot handheld with a 28mm lens. Ambient natural lighting, candid composition, real textures, and environmental background elements (grills, steam, signage). Raw, vibrant, and full of life.`,
+    `Modernist cuisine presentation of ${menuText}, plated with avant-garde precision. Minimalist composition, mirror-like surfaces, microgreens, geometric sauces, and molecular-gastronomy elements. Shot with clinical studio lighting for pristine detail and futuristic aesthetic.`,
+    //`Professional food photography, ${menuText}`
   ]
   return imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
 };
@@ -305,7 +315,8 @@ async function main() {
     const imageUrl = await generateMenuImage(randomPrompt);
 
     console.info('Sending to Slack...');
-    await sendToSlack(prettyText, imageUrl, randomPrompt);
+    console.log(imageUrl)
+    //await sendToSlack(prettyText, imageUrl, randomPrompt);
 
     console.info("I'm done, bye!");
     process.exit(0);
