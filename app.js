@@ -316,7 +316,7 @@ async function main() {
 
     console.info('Sending to Slack...');
     console.log(imageUrl)
-    //await sendToSlack(prettyText, imageUrl, randomPrompt);
+    await sendToSlack(prettyText, imageUrl, randomPrompt);
 
     console.info("I'm done, bye!");
     process.exit(0);
