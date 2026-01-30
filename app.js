@@ -158,40 +158,94 @@ async function generateMenuImage(prompt) {
   }
 }
 
+function formatPromptBlock(prompt) {
+  if (!prompt) return null;
+
+  // Slack section text limit is 3000 chars; keep a little buffer.
+  const maxLen = 2900;
+  const text = prompt.length > maxLen
+    ? `${prompt.slice(0, maxLen)}\n…(truncated)`
+    : prompt;
+
+  return {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: `*Prompt*\n\`\`\`\n${text}\n\`\`\``,
+    },
+  };
+}
+
+async function postToSlackApi({ blocks, text, threadTs }) {
+  const token = process.env.SLACK_BOT_TOKEN;
+  const channel = process.env.SLACK_CHANNEL;
+  if (!token || !channel) return null;
+
+  const payload = {
+    channel,
+    text,
+    blocks,
+    ...(threadTs ? { thread_ts: threadTs } : {}),
+  };
+
+  const resp = await axios.post('https://slack.com/api/chat.postMessage', payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
+
+  if (!resp.data?.ok) {
+    throw new Error(`Slack API error: ${resp.data?.error || 'unknown_error'}`);
+  }
+
+  return resp.data;
+}
+
 async function sendToSlack(menuText, imageUrl, prompt) {
   const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
+  const promptBlock = formatPromptBlock(prompt);
+  const mainBlocks = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*Dagens meny hos <${websiteUrl}|Smaus>:*`,
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `${menuText}`,
+      },
+    },
+    {
+      type: 'image',
+      image_url: imageUrl,
+      alt_text: 'Cafeteria menu image',
+    },
+  ];
 
   try {
-    await webhook.send({
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `*Dagens meny hos <${websiteUrl}|Smaus>:*`,
-          },
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `${menuText}`,
-          },
-        },
-        {
-          type: 'image',
-          image_url: imageUrl,
-          alt_text: 'Cafeteria menu image',
-        },
-        /* {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `*Prompt*: ${prompt}`,
-          },
-        }, */
-      ],
-    });
+    const mainText = `Dagens meny hos Smaus:\n${menuText}`;
+    const apiResp = await postToSlackApi({ blocks: mainBlocks, text: mainText });
+
+    if (apiResp && promptBlock) {
+      await postToSlackApi({
+        blocks: [promptBlock],
+        text: 'Prompt',
+        threadTs: apiResp.ts,
+      });
+      return;
+    }
+
+    await webhook.send({ blocks: mainBlocks });
+
+    if (promptBlock) {
+      // Fallback: no thread support via incoming webhook
+      await webhook.send({ blocks: [promptBlock] });
+    }
   } catch (error) {
     console.error('Error sending message to Slack:', error);
   }
