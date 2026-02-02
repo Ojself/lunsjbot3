@@ -255,12 +255,9 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 		await webhook.send({ blocks: mainBlocks, unfurl_links: false, unfurl_media: false });
 
 		if (promptBlock) {
-			// Fallback: no thread support via incoming webhook
-			await webhook.send({
-				blocks: [promptBlock],
-				unfurl_links: false,
-				unfurl_media: false,
-			});
+			console.warn(
+				"Prompt not posted in thread because SLACK_BOT_TOKEN/SLACK_CHANNEL are missing.",
+			);
 		}
 	} catch (error) {
 		console.error("Error sending message to Slack:", error);
