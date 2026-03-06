@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const axios = require("axios");
-const crypto = require("crypto");
+const crypto = require("node:crypto");
 
 const websiteUrl = "https://tullin.munu.shop/meny";
 
@@ -116,31 +116,10 @@ function extractMenuForDay(html) {
 	return menuItems.join("\n").trim();
 }
 
-// Brukes når HTML er dårlig strukturert
-async function extractMenuForDayWithAI(html) {
-	const $ = cheerio.load(html);
-	const menuElement = $(".static-container").children().text();
-
-	const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-	const prompt = `Extract ${today}'s cafeteria menu from the text below:\n\n${menuElement} - output in Norwegian`;
-
-	try {
-		const response = await openai.chat.completions.create({
-			model: "gpt-4o",
-			messages: [{ role: "user", content: prompt }],
-			max_tokens: 250,
-		});
-
-		return response.choices[0]?.message?.content.trim();
-	} catch (error) {
-		console.error("Error extracting menu with AI:", error);
-	}
-}
-
 async function generateMenuImage(prompt) {
 	try {
 		const response = await openai.images.generate({
-			model: "gpt-image-1",
+			model: "gpt-image-1.5",
 			prompt: prompt,
 			n: 1,
 			size: "1024x1024",
@@ -252,7 +231,11 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 			return;
 		}
 
-		await webhook.send({ blocks: mainBlocks, unfurl_links: false, unfurl_media: false });
+		await webhook.send({
+			blocks: mainBlocks,
+			unfurl_links: false,
+			unfurl_media: false,
+		});
 
 		if (promptBlock) {
 			console.warn(
@@ -380,7 +363,6 @@ const getRandomPrompt = (menuText) => {
 		`Dark-academia inspired gourmet photo of ${menuText} with deep brown, brass, and parchment tones. Lit like an old oil painting with directional Rembrandt-style lighting. Heavy shadows, rich textures, and dramatic vignetting create a moody, scholarly atmosphere.`,
 		`Authentic street-food documentary-style photo of ${menuText}, shot handheld with a 28mm lens. Ambient natural lighting, candid composition, real textures, and environmental background elements (grills, steam, signage). Raw, vibrant, and full of life.`,
 		`Modernist cuisine presentation of ${menuText}, plated with avant-garde precision. Minimalist composition, mirror-like surfaces, microgreens, geometric sauces, and molecular-gastronomy elements. Shot with clinical studio lighting for pristine detail and futuristic aesthetic.`,
-		//`Professional food photography, ${menuText}`
 	];
 	return imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
 };
@@ -395,7 +377,7 @@ async function main() {
 		//const menuTextAi = await extractMenuForDayWithAI(html);
 
 		console.info("Extracting menu...");
-		const { prettyText, data } = await extractAndNormalizeMenu(html);
+		const { prettyText } = await extractAndNormalizeMenu(html);
 
 		const randomPrompt = getRandomPrompt(prettyText);
 
