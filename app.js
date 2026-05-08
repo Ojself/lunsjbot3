@@ -7,6 +7,8 @@ const puppeteer = require("puppeteer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const axios = require("axios");
 const crypto = require("node:crypto");
+const path = require("node:path");
+const sharp = require("sharp");
 
 const websiteUrl = "https://tullin.munu.shop/meny";
 
@@ -79,53 +81,41 @@ const fetchWebsite = async (url) => {
 		return content;
 	} catch (error) {
 		console.error("Error fetching website with Puppeteer:", error);
+		throw error;
 	} finally {
 		await browser.close();
 	}
 };
 
-function extractMenu(html) {
-	const $ = cheerio.load(html);
-	const menuElement = $(".static-container");
-	return menuElement.html();
-}
-
-function extractMenuForDay(html) {
-	const $ = cheerio.load(html);
-	const menuElement = $(".static-container");
-	const daysOfWeek = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag"];
-	const today = daysOfWeek[new Date().getDay() - 1];
-
-	const menuItems = [];
-	let foundToday = false;
-
-	menuElement.children().each((_, el) => {
-		const text = $(el).text().trim();
-
-		if (text === today) {
-			foundToday = true;
-		} else if (daysOfWeek.includes(text)) {
-			foundToday = false;
-		}
-
-		if (foundToday && !daysOfWeek.includes(text)) {
-			menuItems.push(text);
-		}
-	});
-
-	return menuItems.join("\n").trim();
-}
-
 async function generateMenuImage(prompt) {
 	try {
-		const response = await openai.images.generate({
-			model: "gpt-image-1.5",
-			prompt: prompt,
-			n: 1,
-			size: "1024x1024",
+		const base64Photo = (await sharp(path.join(__dirname, "tormod.jpeg"))
+			.resize(1024, 1024, { fit: "cover" })
+			.jpeg()
+			.toBuffer()).toString("base64");
+
+		const response = await openai.responses.create({
+			model: "gpt-4o",
+			input: [
+				{
+					role: "user",
+					content: [
+						{
+							type: "input_image",
+							image_url: `data:image/jpeg;base64,${base64Photo}`,
+						},
+						{
+							type: "input_text",
+							text: `Generate a photorealistic image of the person in this photo. ${prompt} Preserve their exact facial features, hair, and overall appearance faithfully.`,
+						},
+					],
+				},
+			],
+			tools: [{ type: "image_generation" }],
 		});
 
-		const b64_json = response.data[0]?.b64_json;
+		const imageCall = response.output.find((o) => o.type === "image_generation_call");
+		const b64_json = imageCall?.result;
 
 		if (b64_json) {
 			const imageUrl = `data:image/png;base64,${b64_json}`;
@@ -212,6 +202,15 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 			type: "image",
 			image_url: imageUrl,
 			alt_text: "Cafeteria menu image",
+		},
+		{
+			type: "context",
+			elements: [
+				{
+					type: "mrkdwn",
+					text: "Lunsjbotten trenger en ny utvikler, <mailto:tormod.flesjo@gmail.com|ta kontakt> innen 15. mai.",
+				},
+			],
 		},
 	];
 
@@ -350,19 +349,15 @@ async function extractAndNormalizeMenu(html) {
 	}
 }
 
-const getRandomPrompt = (menuText) => {
+const getRandomPrompt = (dishTitles) => {
 	const imagePrompts = [
-		`A hyper-realistic, ultra-detailed, close-up photo shot of ${menuText} with a high-end DSLR, showcasing extreme texture and contrast. The subject is illuminated by a harsh, stylized flash, creating dramatic shadows and sharp highlights. The image feels tactile and immersive—every pore, fiber, or surface detail is visible. Shot with a shallow depth of field, background bokeh is creamy and minimal. Composition is unique and intentional—this is not just realism, it’s hyper-real, cinematic still life with a surreal edge.`,
-		`Cinematic fine-dining photograph of ${menuText}, shot on a full-frame camera with a 50mm f/1.2 lens. Low-key lighting with rich shadows and subtle rim light detailing the edges of the dish. Deep, velvety color grading, inspired by Michelin-star plating photography. Texture-rich macro detail with a moody, intimate dining atmosphere.`,
-		`Bright editorial food photography of ${menuText}, styled for a high-end culinary magazine. Natural sunlight from a window creates soft gradients and gentle shadows. Props are minimalist: linen napkins, matte ceramic dishes, seasonal accents. Shot with a 35mm lens for an airy, lifestyle feel—clean, fresh, and inviting.`,
-		`Dynamic splash-art studio shot of ${menuText}, frozen mid-motion with high-speed flash. Liquids, crumbs, or ingredients suspended dramatically in the air. Hyper-crisp detail, glossy highlights, and commercial-advertising polish. Background is pure gradient studio color for maximum contrast and visual impact.`,
-		`Rustic, farm-to-table style photo of ${menuText} on weathered wood surfaces. Soft warm light like golden-hour sun, earthy tones, and natural textures. Includes organic props like herbs, grain sacks, or vegetables. Shallow depth of field and subtle film grain for an artisanal, wholesome feel.`,
-		`Extreme macro photography of ${menuText}, focusing on abstract textures and micro-details. 5:1 magnification, razor-thin depth of field, and controlled studio lighting. The food becomes sculptural and surreal—emphasizing pattern, moisture, crystallization, and structure like scientific photography with artistic flair.`,
-		`Clean, glossy commercial product photograph of ${menuText} styled for packaging. Perfect symmetry, immaculate styling, and ultra-sharp definition. Background is seamless white or color-matched. Lighting is even, diffused, and controlled. Every element appears intentional, polished, and ready for print.`,
-		`Soft, dreamy pastel-toned food photo of ${menuText}. Backlit with gentle diffusion, creating a glowing halo around the dish. Props include soft linens, pastel ceramics, and airy backgrounds. Atmosphere feels delicate, ethereal, and almost whimsical.`,
-		`Dark-academia inspired gourmet photo of ${menuText} with deep brown, brass, and parchment tones. Lit like an old oil painting with directional Rembrandt-style lighting. Heavy shadows, rich textures, and dramatic vignetting create a moody, scholarly atmosphere.`,
-		`Authentic street-food documentary-style photo of ${menuText}, shot handheld with a 28mm lens. Ambient natural lighting, candid composition, real textures, and environmental background elements (grills, steam, signage). Raw, vibrant, and full of life.`,
-		`Modernist cuisine presentation of ${menuText}, plated with avant-garde precision. Minimalist composition, mirror-like surfaces, microgreens, geometric sauces, and molecular-gastronomy elements. Shot with clinical studio lighting for pristine detail and futuristic aesthetic.`,
+		`The person in the reference photo is sitting at a cozy restaurant table, happily eating ${dishTitles}. Warm candlelight, rustic wooden table, casual dining atmosphere. Candid, natural moment. Photorealistic, shot on 35mm f/1.8.`,
+		`The person in the reference photo is at a bright office canteen, mid-bite into ${dishTitles}. Cheerful expression, modern cafeteria setting with other diners blurred in the background. Natural overhead lighting. Photorealistic, documentary style.`,
+		`The person in the reference photo is enjoying a fine-dining lunch of ${dishTitles}. White tablecloth, elegant plating, soft window light from the side. Sophisticated and relaxed atmosphere. Photorealistic, shot on 50mm f/1.2.`,
+		`The person in the reference photo is eating ${dishTitles} outdoors at a sunny terrace café. Dappled sunlight, bistro chairs, plants in the background. Relaxed, summery mood. Photorealistic, lifestyle photography.`,
+		`The person in the reference photo is dramatically presenting a plate of ${dishTitles} to the camera with theatrical enthusiasm, like a TV chef. Studio lighting, colorful background. Fun, bold, cinematic.`,
+		`The person in the reference photo is eating ${dishTitles} at a cozy home kitchen table. Morning light through a window, casual clothes, comfortable and intimate atmosphere. Photorealistic, warm tones.`,
+		`The person in the reference photo is at a lively food market, holding and tasting ${dishTitles}. Busy, vibrant background with stalls and people. Handheld camera feel, travel documentary style.`,
 	];
 	return imagePrompts[Math.floor(Math.random() * imagePrompts.length)];
 };
@@ -377,9 +372,11 @@ async function main() {
 		//const menuTextAi = await extractMenuForDayWithAI(html);
 
 		console.info("Extracting menu...");
-		const { prettyText } = await extractAndNormalizeMenu(html);
+		const { prettyText, data } = await extractAndNormalizeMenu(html);
 
-		const randomPrompt = getRandomPrompt(prettyText);
+		const dishTitles =
+			data?.items?.map((i) => i.title).join(", ") || prettyText;
+		const randomPrompt = getRandomPrompt(dishTitles);
 
 		console.info("Generating image from text: ", prettyText);
 		const imageUrl = await generateMenuImage(randomPrompt);
