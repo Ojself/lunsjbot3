@@ -7,18 +7,18 @@
     "start": "node ./app.js"
   },
   "keywords": [],
-  "author": "Tormod",
+  "author": "Trollmod",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.723.0",
-    "@aws-sdk/s3-request-presigner": "^3.723.0",
     "@slack/webhook": "^7.0.3",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.4.2",
     "node-cron": "^3.0.3",
     "openai": "^6.27.0",
-    "puppeteer": "^23.11.1"
+    "puppeteer": "^24.43.0",
+    "sharp": "^0.34.5"
   }
 }
