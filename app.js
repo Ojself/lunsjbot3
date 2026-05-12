@@ -1,4 +1,6 @@
 require("dotenv").config();
+const fs = require("node:fs");
+const path = require("node:path");
 const cheerio = require("cheerio");
 // const cron = require('node-cron');
 const { IncomingWebhook } = require("@slack/webhook");
@@ -9,7 +11,6 @@ const axios = require("axios");
 const crypto = require("node:crypto");
 
 const websiteUrl = "https://tullin.munu.shop/meny";
-const flink_utvikler_jpeg = "https://media.licdn.com/dms/image/v2/D4D03AQEZDPabcaBQVA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1683978395537?e=1779926400&v=beta&t=6N-dVIG5WtKLiRDnGIvr99MEl1cMbe7P7F5bauVwrw0"
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -88,30 +89,30 @@ const fetchWebsite = async (url) => {
 
 async function generateMenuImage(prompt) {
 	try {
+		const imagePath = path.join(__dirname, "flink_utvikler.jpeg");
+		const base64Image = fs.readFileSync(imagePath, "base64");
+
 		const response = await openai.responses.create({
-			model: "gpt-4o",
-			input: [
-				{
-					role: "user",
-					content: [
-						{
-							type: "input_image",
-							image_url: flink_utvikler_jpeg,
-						},
-						{
-							type: "input_text",
-							text: `Generate a photorealistic image of the person in this photo. ${prompt} Preserve their exact facial features, hair, and overall appearance faithfully.`,
-						},
-					],
-				},
-			],
+			model: "gpt-4.1-mini",
+			input: [{
+				role: "user",
+				content: [
+					{
+						type: "input_image",
+						image_url: `data:image/jpeg;base64,${base64Image}`,
+					},
+					{
+						type: "input_text",
+						text: `Generate a photorealistic image of the person in this photo. ${prompt} Preserve their exact facial features, hair, and overall appearance faithfully.`,
+					},
+				],
+			}],
 			tools: [{ type: "image_generation" }],
 		});
 
-		console.info("Full response.output:", JSON.stringify(response.output, null, 2));
-		const imageCall = response.output.find((o) => o.type === "image_generation_call");
-		console.info("image_generation_call output:", JSON.stringify(imageCall, null, 2));
-		const b64_json = imageCall?.result;
+		const b64_json = response.output
+			.filter((o) => o.type === "image_generation_call")
+			.map((o) => o.result)[0];
 
 		if (b64_json) {
 			const imageUrl = `data:image/png;base64,${b64_json}`;
@@ -119,7 +120,7 @@ async function generateMenuImage(prompt) {
 			console.info("Uploaded image URL:", uploadedUrl);
 			return uploadedUrl;
 		} else {
-			throw new Error("Failed to generate image URL");
+			throw new Error("Failed to generate image: no image_generation_call in response");
 		}
 	} catch (error) {
 		console.error("Error generating image with AI:", error);
