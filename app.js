@@ -114,6 +114,7 @@ async function generateMenuImage(prompt) {
 			tools: [{ type: "image_generation" }],
 		});
 
+		console.info("Full response.output:", JSON.stringify(response.output, null, 2));
 		const imageCall = response.output.find((o) => o.type === "image_generation_call");
 		console.info("image_generation_call output:", JSON.stringify(imageCall, null, 2));
 		const b64_json = imageCall?.result;
