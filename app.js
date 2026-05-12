@@ -7,10 +7,9 @@ const puppeteer = require("puppeteer");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const axios = require("axios");
 const crypto = require("node:crypto");
-const path = require("node:path");
-const sharp = require("sharp");
 
 const websiteUrl = "https://tullin.munu.shop/meny";
+const flink_utvikler_jpeg = "https://media.licdn.com/dms/image/v2/D4D03AQEZDPabcaBQVA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1683978395537?e=1779926400&v=beta&t=6N-dVIG5WtKLiRDnGIvr99MEl1cMbe7P7F5bauVwrw0"
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -89,11 +88,6 @@ const fetchWebsite = async (url) => {
 
 async function generateMenuImage(prompt) {
 	try {
-		const base64Photo = (await sharp(path.join(__dirname, "flink_utvikler.jpeg"))
-			.resize(1024, 1024, { fit: "cover" })
-			.jpeg()
-			.toBuffer()).toString("base64");
-
 		const response = await openai.responses.create({
 			model: "gpt-4o",
 			input: [
@@ -102,7 +96,7 @@ async function generateMenuImage(prompt) {
 					content: [
 						{
 							type: "input_image",
-							image_url: `data:image/jpeg;base64,${base64Photo}`,
+							image_url: flink_utvikler_jpeg,
 						},
 						{
 							type: "input_text",
