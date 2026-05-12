@@ -115,17 +115,20 @@ async function generateMenuImage(prompt) {
 		});
 
 		const imageCall = response.output.find((o) => o.type === "image_generation_call");
+		console.info("image_generation_call output:", JSON.stringify(imageCall, null, 2));
 		const b64_json = imageCall?.result;
 
 		if (b64_json) {
 			const imageUrl = `data:image/png;base64,${b64_json}`;
 			const uploadedUrl = await uploadToR2(imageUrl, "menu-image.png");
+			console.info("Uploaded image URL:", uploadedUrl);
 			return uploadedUrl;
 		} else {
 			throw new Error("Failed to generate image URL");
 		}
 	} catch (error) {
 		console.error("Error generating image with AI:", error);
+		throw error;
 	}
 }
 
@@ -198,11 +201,15 @@ async function sendToSlack(menuText, imageUrl, prompt) {
 				text: `${menuText}`,
 			},
 		},
-		{
-			type: "image",
-			image_url: imageUrl,
-			alt_text: "Cafeteria menu image",
-		},
+		...(imageUrl
+			? [
+				{
+					type: "image",
+					image_url: imageUrl,
+					alt_text: "Cafeteria menu image",
+				},
+			]
+			: []),
 		{
 			type: "context",
 			elements: [
